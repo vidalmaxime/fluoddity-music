@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluoddity DJ</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<div id="hud">
+  <header id="topbar" class="glass">
+    <div class="brand">FLUODDITY<span>DJ</span></div>
+    <div class="group sources">
+      <button id="src-tab" data-midi="src-tab" title="Capture audio from a browser tab (Spotify Web, YouTube, SoundCloud, Mixcloud…) or your screen">Tab audio</button>
+      <button id="src-input" title="Microphone, audio interface, DJ mixer or loopback (e.g. BlackHole)">Line / mic</button>
+      <select id="input-device" hidden title="Input device"></select>
+      <button id="src-files" title="Play audio files (or drop them anywhere)">Files</button>
+      <button id="src-demo" title="Built-in procedural techno track">Demo</button>
+      <input id="file-input" type="file" accept="audio/*" multiple hidden>
+    </div>
+    <div id="transport" class="group" hidden>
+      <button id="tr-prev" title="Previous">⏮</button>
+      <button id="tr-play" title="Play / pause">⏯</button>
+      <button id="tr-next" title="Next">⏭</button>
+      <div class="track"><span id="tr-name"></span><div id="tr-bar"><div id="tr-pos"></div></div></div>
+    </div>
+    <div id="src-label" class="dim"></div>
+    <div class="spacer"></div>
+    <div id="tempo" class="group">
+      <div class="bpm"><b id="bpm">–––</b><small>BPM</small></div>
+      <div id="beats"><i></i><i></i><i></i><i></i></div>
+      <button id="tap" data-midi="tap" title="Tap tempo (T)">TAP</button>
+      <button id="resync" data-midi="resync" title="Make the current beat the downbeat (Y)">1</button>
+    </div>
+    <div id="section-tag"></div>
+    <div class="group tools">
+      <button id="btn-projector" title="Open a clean output window for a projector / second screen">Projector</button>
+      <button id="btn-rec" title="Record video + audio">● Rec</button>
+      <button id="btn-fs" title="Fullscreen (F)">⛶</button>
+      <button id="btn-hide" title="Hide interface (H)">Hide</button>
+      <button id="btn-help" title="Shortcuts (?)">?</button>
+    </div>
+  </header>
+
+  <aside id="left" class="panel glass">
+    <section>
+      <h3>Decks</h3>
+      <div id="decks">
+        <div class="deck" id="deck-a"><label>A</label><div class="name"></div><div class="cat"></div></div>
+        <div class="deck" id="deck-b"><label>B</label><div class="name"></div><div class="cat"></div></div>
+      </div>
+      <div class="row">
+        <span class="lbl">Mix length</span>
+        <select id="mix-beats" data-midi="mix-beats">
+          <option value="1">1 beat</option><option value="4">4 beats</option><option value="8" selected>8 beats</option>
+          <option value="16">16 beats</option><option value="32">32 beats</option>
+        </select>
+      </div>
+      <div class="btnrow">
+        <button id="btn-next" data-midi="next" title="Mix into the next preset from the crate (N)">Next ⇢</button>
+        <button id="btn-drop" data-midi="drop" title="Fire a drop: rebirth + shockwave + flash (D)">Drop!</button>
+        <button id="btn-evolve" data-midi="evolve" title="Mix into a mutated descendant of a random particle (E)">Evolve</button>
+      </div>
+    </section>
+    <section>
+      <h3>Autopilot <label class="switch"><input type="checkbox" id="auto-enabled" data-midi="auto" checked><span></span></label></h3>
+      <div class="row"><span class="lbl">Change every</span>
+        <select id="auto-phrase"><option value="0">never</option><option value="4">4 bars</option><option value="8">8 bars</option><option value="16" selected>16 bars</option><option value="32">32 bars</option></select></div>
+      <div class="row"><span class="lbl">On drop</span>
+        <select id="auto-drop"><option value="cut" selected>hard cut</option><option value="mix">fast mix</option><option value="none">stay</option></select></div>
+      <div class="row"><span class="lbl">Evolve every</span>
+        <select id="auto-evolve"><option value="0" selected>off</option><option value="4">4 bars</option><option value="8">8 bars</option><option value="16">16 bars</option></select></div>
+      <div class="row"><span class="lbl">Crate</span>
+        <select id="auto-crate"><option value="starter" selected>Starter</option><option value="favorites">★ Favorites</option><option value="all">All 131</option><option value="Core">Core</option><option value="Advanced">Advanced</option></select></div>
+      <div class="row"><span class="lbl">Order</span>
+        <select id="auto-order"><option value="shuffle" selected>shuffle</option><option value="sequence">in order</option></select></div>
+    </section>
+    <section class="grow">
+      <h3>Library <small class="dim">click: mix · shift-click: cut · ★ fav</small></h3>
+      <input id="lib-search" type="search" placeholder="Search presets…" autocomplete="off">
+      <div id="library"></div>
+    </section>
+  </aside>
+
+  <aside id="right" class="panel glass">
+    <section>
+      <h3>Reactor</h3>
+      <div class="row"><span class="lbl">Profile</span><select id="profile"></select></div>
+      <div class="row"><span class="lbl">Reactivity</span><input type="range" id="master" data-midi="master" min="0" max="2" step="0.01" value="1"><output></output></div>
+      <div class="row"><span class="lbl">Sensitivity</span><input type="range" id="sensitivity" data-midi="sensitivity" min="0.5" max="2" step="0.01" value="1"><output></output></div>
+    </section>
+    <section>
+      <h3>Look</h3>
+      <div class="row"><span class="lbl">Palette</span><select id="palette">
+        <option value="0">Original</option><option value="1">Spectral</option><option value="2">Ember</option>
+        <option value="3">Abyss</option><option value="4">Acid</option><option value="5">Mono</option></select></div>
+      <div class="row"><span class="lbl">Colour by</span><select id="color-mode">
+        <option value="0">Preset (tribes)</option><option value="1">Heading</option><option value="2">Activity</option></select></div>
+      <div class="row"><span class="lbl">Harmonic hue</span><label class="switch"><input type="checkbox" id="harmonic" checked><span></span></label></div>
+      <div class="row"><span class="lbl">Kaleidoscope</span><select id="kaleido" data-midi="kaleido">
+        <option value="0">off</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="12">12</option></select></div>
+      <div class="row"><span class="lbl">Exposure</span><input type="range" id="exposure" data-midi="exposure" min="0" max="2.5" step="0.01" value="1"><output></output></div>
+    </section>
+    <section class="grow">
+      <h3>Modulation <small class="dim">base · source · depth</small></h3>
+      <div id="matrix"></div>
+    </section>
+    <section>
+      <h3>Engine</h3>
+      <div class="row"><span class="lbl">World size</span><select id="world-size">
+        <option value="0.08">0.08 · 48k</option><option value="0.25">0.25 · 150k</option><option value="0.5">0.5 · 300k</option>
+        <option value="1">1 · 600k</option><option value="1.5">1.5 · 900k</option></select></div>
+      <div class="row"><span class="lbl">Resolution</span><select id="render-scale">
+        <option value="0.75">0.75×</option><option value="1">1× (fast)</option><option value="1.5">1.5×</option><option value="2">2× (Retina)</option></select></div>
+      <div class="row"><span class="lbl">Physics speed</span><input type="range" id="steps" min="1" max="12" step="1" value="4"><output></output></div>
+      <div class="row"><span class="lbl">Mouse</span><select id="mouse-mode"><option value="select">select particle</option><option value="draw">draw flow</option></select></div>
+      <div class="btnrow"><button id="btn-reset" title="Restart the simulation (R)">Reset sim</button><button id="btn-midi" title="Map MIDI controls">MIDI learn</button></div>
+      <div id="perf" class="dim"></div>
+    </section>
+  </aside>
+
+  <footer id="bottombar" class="glass">
+    <canvas id="spectrum" width="360" height="56"></canvas>
+    <div id="hits"><span id="led-kick">KICK</span><span id="led-snare">SNARE</span><span id="led-hat">HAT</span></div>
+    <div id="xfader">
+      <span id="xf-a" class="xf-name"></span>
+      <input type="range" id="crossfader" data-midi="crossfader" min="0" max="1" step="0.001" value="0">
+      <span id="xf-b" class="xf-name"></span>
+    </div>
+    <div id="features">
+      <div><label>Intensity</label><meter id="m-intensity" min="0" max="1"></meter></div>
+      <div><label>Build</label><meter id="m-build" min="0" max="1"></meter></div>
+      <div><label>Drop</label><meter id="m-drop" min="0" max="1"></meter></div>
+      <div><label>Calm</label><meter id="m-calm" min="0" max="1"></meter></div>
+    </div>
+  </footer>
+</div>
+
+<div id="start" class="overlay">
+  <div class="card glass">
+    <h1>FLUODDITY<span>DJ</span></h1>
+    <p>Hundreds of thousands of particles that follow each other’s trails, with the physics driven by your music.
+      Kicks send shockwaves through the fluid, hats make it shimmer, builds diversify the tribes, drops tear it down and rebuild it.</p>
+    <div class="choices">
+      <button data-start="tab"><b>Tab / system audio</b><small>Spotify Web, YouTube, SoundCloud… tick “Share audio”</small></button>
+      <button data-start="input"><b>Line in / mic</b><small>DJ mixer, audio interface, BlackHole loopback</small></button>
+      <button data-start="files"><b>Audio files</b><small>or drag &amp; drop tracks anywhere</small></button>
+      <button data-start="demo"><b>Demo track</b><small>procedural techno with builds &amp; drops</small></button>
+    </div>
+    <p class="dim small" id="gpu-status">Calibrating GPU…</p>
+    <p class="dim small">Physics &amp; presets: <a href="https://github.com/aphid91/Fluoddity" target="_blank" rel="noopener">Fluoddity</a> by aphid91 (MIT). Press <kbd>?</kbd> for shortcuts.</p>
+  </div>
+</div>
+
+<div id="help" class="overlay hidden">
+  <div class="card glass">
+    <h2>Performance keys</h2>
+    <div class="keys">
+      <kbd>H</kbd><span>hide / show interface</span>
+      <kbd>F</kbd><span>fullscreen</span>
+      <kbd>Space</kbd><span>freeze physics</span>
+      <kbd>T</kbd><span>tap tempo (4+ taps)</span>
+      <kbd>Y</kbd><span>current beat is the downbeat</span>
+      <kbd>N</kbd><span>next preset (mix)</span>
+      <kbd>⇧N</kbd><span>next preset (hard cut)</span>
+      <kbd>D</kbd><span>drop: rebirth + shock + flash</span>
+      <kbd>E</kbd><span>evolve (mutated lineage)</span>
+      <kbd>A</kbd><span>autopilot on / off</span>
+      <kbd>1–9</kbd><span>mix into favourite #1–9</span>
+      <kbd>← →</kbd><span>nudge crossfader</span>
+      <kbd>K</kbd><span>cycle kaleidoscope</span>
+      <kbd>C</kbd><span>cycle palette</span>
+      <kbd>R</kbd><span>reset simulation</span>
+      <kbd>B</kbd><span>blackout</span>
+      <kbd>M</kbd><span>mouse: select ↔ draw</span>
+      <kbd>Click</kbd><span>adopt that particle’s rule (lineage)</span>
+      <kbd>Right-click</kbd><span>undo last pick</span>
+      <kbd>Wheel</kbd><span>zoom · Alt-drag pans · double-click resets</span>
+    </div>
+    <p class="dim small">Click anywhere to close.</p>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="error" hidden></div>
+<div id="drop-hint" class="overlay hidden"><div>Drop audio files to play</div></div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "fluoddity-dj",
+  "version": "1.0.0",
+  "description": "Audio-reactive visual DJ tool built on the Fluoddity particle system",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node serve.mjs",
+    "build:presets": "node scripts/build-presets.mjs"
+  },
+  "license": "MIT"
+}
